@@ -46,9 +46,11 @@ void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo);
 void formato_I_assembly(lista_entradas *l, int i);
 void printar_codigo_assembly(lista_entradas *l, int i);
 void definir_sinais_assembly(lista_entradas *l);
-void alteracao_pc_assembly(lista_entradas *l, int i, int *PC);
+void alteracao_pc_assembly(lista_entradas *l, int *PC);
+void printar_sinais_assembly(lista_entradas *l, int i);
 void printar_pc_assembly(lista_entradas *l, int i);
-void alteracao_registrador_assembly(lista_entradas *l, int i);
+void alteracao_registrador_assembly(lista_entradas *l);
+void operacoes_registradores_assembly(lista_entradas *l);
 
 
 
