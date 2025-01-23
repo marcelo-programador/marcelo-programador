@@ -37,6 +37,8 @@ typedef struct sai
     int quantidade, capacidade;
 } lista_saidas;
 
+void Controlador_Principal_Assembly();
+
 extern uint32_t registradores[N_REGISTRADORES];
 void inicializar_registradores();
 
@@ -56,6 +58,7 @@ void assembly_instruction_type_form(lista_entradas *l);
 void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo);
 void formato_I_assembly(lista_entradas *l, int i);
 void printar_codigo_assembly(lista_entradas *l, int i);
+void printar_codigo_bin(lista_saidas *s, int i);
 void definir_sinais_assembly(lista_entradas *l);
 void alteracao_pc_assembly(lista_entradas *l, int *PC);
 void printar_sinais_assembly(lista_entradas *l, int i);
@@ -67,6 +70,8 @@ void preencher_tipo_R(lista_entradas *l, lista_saidas *s, int i);
 void preencher_tipo_I(lista_entradas *l, lista_saidas *s, int i);
 void intToBinaryString(int num, char *binaryString, int bits);
 void escreverSaidasEmArquivo(lista_saidas *lista, const char *nomeArquivo);
+void exibir_lista_assembly(lista_entradas *l, lista_saidas* s);
+
 
 void printar_sinais(lista_entradas *l, int i);
 void printar_tipo_instrucao(lista_entradas *l, int i);

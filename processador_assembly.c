@@ -36,7 +36,7 @@ void finalizar(lista_entradas *l, lista_saidas *s)
 {
     free(l->entradas);
     free(s->saidas);
-    printf("Listas Finalizadas com Sucessos!\n");
+    printf("Listas Finalizadas com Sucesso!\n");
 }
 
 void inserir_entrada(lista_entradas *l, instructions i)
@@ -102,7 +102,7 @@ void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo)
     fclose(arquivo);
 }
 
-void exibir_lista(lista_entradas *l)
+void exibir_lista_assembly(lista_entradas *l, lista_saidas* s)
 {
     if (l->quantidade == 0)
     {
@@ -115,6 +115,7 @@ void exibir_lista(lista_entradas *l)
     {
         printf("Instrucao MIPS %d:\n", i + 1);
         printar_codigo_assembly(l, i);
+        printar_codigo_bin(s,i);
         printar_tipo_instrucao(l, i);
         printar_mudancas_memoria(l, i);
         printar_pc_assembly(l, i);
@@ -153,6 +154,10 @@ void printar_tipo_instrucao(lista_entradas *l, int i)
 void printar_codigo_assembly(lista_entradas *l, int i)
 {
     printf("Codigo Assembly: %s\n", l->entradas[i].cod_assembly);
+}
+void printar_codigo_bin(lista_saidas *s, int i)
+{
+    printf("Codigo Binario: %s\n", s->saidas[i].cod_binario);
 }
 
 void definir_sinais_assembly(lista_entradas *l)
@@ -334,55 +339,38 @@ void alteracao_pc_assembly(lista_entradas *l, int *PC)
 {
     for (int i = 0; i < l->quantidade; i++)
     {
-        if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)
+        if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0 && *PC <= MEMORIA - 4)
         {
-            printf("BEQ: $rs = %d, $rt = %d, offset = %d\n",
-                   registradores[l->entradas[i].rs],
-                   registradores[l->entradas[i].rt],
-                   l->entradas[i].const_or_address);
 
             if (l->entradas[i].rs == l->entradas[i].rt)
             {
 
                 int novo_pc = *PC + (l->entradas[i].const_or_address * 4);
 
-                printf("Novo PC: %d\n", novo_pc);
-
                 *PC = novo_pc;
-                printf("PC alterado para: %d\n", *PC);
             }
             else
             {
-                printf("*** ERRO!!: Acesso invalido a memoria (Endereco fora dos limites de memoria) ***\n");
-            }
-        }
-        else
-        {
-
-            if (*PC <= MEMORIA - 4)
-            {
-                *PC = *PC + 4;
-                printf("PC alterado para: %d\n", *PC);
-            }
-            else
-            {
-                printf("*** ERRO!!: Acesso invalido a memoria (Endereco fora dos limites de memoria) ***\n");
+                *PC += 4;
             }
         }
 
-        if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0 ||
-            strcmp(l->entradas[i].instrucao_tipo, "sub") == 0 ||
-            strcmp(l->entradas[i].instrucao_tipo, "lw") == 0 ||
-            strcmp(l->entradas[i].instrucao_tipo, "sw") == 0 ||
-            strcmp(l->entradas[i].instrucao_tipo, "addi") == 0)
+        else if ((strcmp(l->entradas[i].instrucao_tipo, "add") == 0 ||
+                  strcmp(l->entradas[i].instrucao_tipo, "sub") == 0 ||
+                  strcmp(l->entradas[i].instrucao_tipo, "lw") == 0 ||
+                  strcmp(l->entradas[i].instrucao_tipo, "sw") == 0 ||
+                  strcmp(l->entradas[i].instrucao_tipo, "addi") == 0) &&
+                 *PC <= MEMORIA - 4)
         {
-            if (*PC <= MEMORIA - 4)
+            *PC = *PC + 4;
+        }
+
+        else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0 && *PC <= MEMORIA - 4)
+        {
+            if (l->entradas[i].const_or_address * 4 <= MEMORIA - 4)
             {
-                *PC = *PC + 4;
-            }
-            else
-            {
-                printf("*** ERRO!!: Acesso invalido a memoria (Endereco fora dos limites de memoria) ***\n");
+                int novo_pc = *PC + (l->entradas[i].const_or_address * 4);
+                *PC = novo_pc;
             }
         }
     }
@@ -403,11 +391,11 @@ void printar_pc_assembly(lista_entradas *l, int i)
     {
         if (l->entradas[i].rs == l->entradas[i].rt)
         {
-            printf("PC = PC + %d\n", l->entradas[i].const_or_address * 4);
+            printf("Registradores Iguais => PC = PC + %d\n", l->entradas[i].const_or_address * 4);
         }
         else
         {
-            printf("PC = PC + 4 + %d\n", l->entradas[i].const_or_address * 4);
+            printf("Registradores Diferentes => PC = PC + 4 \n");
         }
     }
     else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0)
@@ -823,4 +811,26 @@ void escreverSaidasEmArquivo(lista_saidas *lista, const char *nomeArquivo)
 
     fclose(arquivo);
     printf("Os codigos binarios foram salvos em '%s'.\n", nomeArquivo);
+}
+
+void Controlador_Principal_Assembly()
+{
+    const char *entrada_binario = "Entrada.txt";
+    const char *saida_binario = "Saida.txt";
+    int PC = 0;
+
+    lista_entradas lista;
+    lista_saidas lista_output;
+    inicializar(&lista, &lista_output, contar_instrucoes(entrada_binario));
+    ler_arquivo_salvar_na_lista(&lista, entrada_binario);
+    assembly_instruction_type_form(&lista);
+    definir_sinais_assembly(&lista);
+    alteracao_registrador_assembly(&lista);
+    operacoes_registradores_assembly(&lista);
+    alteracao_pc_assembly(&lista, &PC);
+    preencher_lista_out(&lista, &lista_output);
+    escreverSaidasEmArquivo(&lista_output, saida_binario);
+    exibir_lista_assembly(&lista, &lista_output);
+    printf("PC Atual: %d\n\n", PC);
+    finalizar(&lista, &lista_output);
 }
