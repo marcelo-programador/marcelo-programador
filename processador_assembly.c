@@ -21,18 +21,22 @@ void inicializar_registradores()
     }
 }
 
-void inicializar(lista_entradas *l, int cap)
+void inicializar(lista_entradas *l, lista_saidas *s, int cap)
 {
     l->entradas = (instructions *)calloc(cap, sizeof(instructions));
+    s->saidas = (instructions_bin *)calloc(cap, sizeof(instructions_bin));
     l->quantidade = 0;
+    s->quantidade = 0;
     l->capacidade = cap;
-    printf("lista inicializada\n");
+    s->capacidade = cap;
+    printf("listas inicializadas\n");
 }
 
-void finalizar(lista_entradas *l)
+void finalizar(lista_entradas *l, lista_saidas *s)
 {
     free(l->entradas);
-    printf("Lista Finalizada com Sucesso!\n");
+    free(s->saidas);
+    printf("Listas Finalizadas com Sucessos!\n");
 }
 
 void inserir_entrada(lista_entradas *l, instructions i)
@@ -245,7 +249,7 @@ void formato_I_assembly(lista_entradas *l, int i)
     }
     else
     {
-        printf("Instrução desconhecida: %s\n", l->entradas[i].cod_assembly);
+        printf("Instrução desconhecida indice: %d\n %s\n", i, l->entradas[i].cod_assembly);
         strcpy(l->entradas[i].instrucao_tipo, "desconhecido");
     }
 }
@@ -408,7 +412,7 @@ void printar_pc_assembly(lista_entradas *l, int i)
     }
     else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0)
     {
-        printf("PC = endereco do alvo do salto (endereco calculado com base no opcode)\n");
+        printf("PC = PC + %d\n", l->entradas[i].const_or_address * 4);
     }
 }
 
@@ -427,6 +431,7 @@ void alteracao_registrador_assembly(lista_entradas *l)
 
     for (int i = 0; i < l->quantidade; i++)
     {
+
         if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0 || strcmp(l->entradas[i].instrucao_tipo, "sub") == 0)
         {
             sscanf(l->entradas[i].cod_assembly, "%*s %s %s %s", rd_ass, rs_ass, rt_ass);
@@ -434,23 +439,31 @@ void alteracao_registrador_assembly(lista_entradas *l)
             for (int j = 0; j < N_REGISTRADORES; j++)
             {
                 if (strcmp(rd_ass, registradores_nome[j]) == 0)
+                {
                     l->entradas[i].rd = j;
+                }
 
                 if (strcmp(rs_ass, registradores_nome[j]) == 0)
+                {
                     l->entradas[i].rs = j;
+                }
 
                 if (strcmp(rt_ass, registradores_nome[j]) == 0)
+                {
                     l->entradas[i].rt = j;
+                }
             }
         }
         else if (strcmp(l->entradas[i].instrucao_tipo, "addi") == 0)
         {
-            sscanf(l->entradas[i].cod_assembly, "%*s %s %s %d", rs_ass, rt_ass, &immediate);
+            sscanf(l->entradas[i].cod_assembly, "%*s %s %s %d", rd_ass, rs_ass, &immediate);
 
             for (int j = 0; j < N_REGISTRADORES; j++)
             {
-                if (strcmp(rt_ass, registradores_nome[j]) == 0)
-                    l->entradas[i].rt = j;
+                if (strcmp(rd_ass, registradores_nome[j]) == 0)
+                {
+                    l->entradas[i].rd = j;
+                }
 
                 if (strcmp(rs_ass, registradores_nome[j]) == 0)
                     l->entradas[i].rs = j;
@@ -488,11 +501,17 @@ void alteracao_registrador_assembly(lista_entradas *l)
 
             l->entradas[i].const_or_address = immediate;
         }
+        else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0)
+        {
+            sscanf(l->entradas[i].cod_assembly, "%*s %d", &immediate);
+            l->entradas[i].const_or_address = immediate;
+        }
     }
 }
 
 void operacoes_registradores_assembly(lista_entradas *l)
 {
+    inicializar_registradores();
     for (int i = 0; i < l->quantidade; i++)
     {
         if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0)
@@ -505,7 +524,7 @@ void operacoes_registradores_assembly(lista_entradas *l)
         }
         else if (strcmp(l->entradas[i].instrucao_tipo, "addi") == 0)
         {
-            registradores[l->entradas[i].rt] = registradores[l->entradas[i].rs] + l->entradas[i].const_or_address;
+            registradores[l->entradas[i].rd] = registradores[l->entradas[i].rs] + l->entradas[i].const_or_address;
         }
     }
 }
@@ -548,11 +567,11 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
     {
         printf("Executando %s: %s = %s + %d\nResultado: %s = %d\n",
                l->entradas[i].instrucao_tipo,
+               registradores_nome[l->entradas[i].rd],
                registradores_nome[l->entradas[i].rs],
-               registradores_nome[l->entradas[i].rt],
                l->entradas[i].const_or_address,
-               registradores_nome[l->entradas[i].rs],
-               registradores[l->entradas[i].rs]);
+               registradores_nome[l->entradas[i].rd],
+               registradores[l->entradas[i].rd]);
     }
 
     else if (strcmp(l->entradas[i].instrucao_tipo, "lw") == 0)
@@ -587,8 +606,8 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
 
     else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0)
     {
-        printf("Executando %s: PC = (PC & 0xF0000000) | (address << 2)\n",
-               l->entradas[i].instrucao_tipo);
+        printf("Executando %s: j %d\n",
+               l->entradas[i].instrucao_tipo, l->entradas[i].const_or_address);
     }
     else
     {
@@ -635,6 +654,7 @@ int contar_instrucoes(const char *nome_arquivo)
 }
 
 void assembly_instruction_type_form(lista_entradas *l)
+
 {
     if (l != NULL)
     {
@@ -651,4 +671,156 @@ void assembly_instruction_type_form(lista_entradas *l)
             }
         }
     }
+}
+
+void preencher_lista_out(lista_entradas *l, lista_saidas *s)
+{
+    char str[33];
+    for (int i = 0; i < l->quantidade; i++)
+    {
+        if (l->entradas[i].formato_tipo == 'R')
+        {
+            preencher_tipo_R(l, s, i);
+            s->quantidade++;
+        }
+        else if (l->entradas[i].formato_tipo == 'I')
+        {
+            preencher_tipo_I(l, s, i);
+            s->quantidade++;
+        }
+    }
+}
+
+void preencher_tipo_R(lista_entradas *l, lista_saidas *s, int i)
+{
+    if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0)
+    {
+        char rs[6];
+        char rt[6];
+        char rd[6];
+        intToBinaryString(l->entradas[i].rs, rs, 5);
+        intToBinaryString(l->entradas[i].rt, rt, 5);
+        intToBinaryString(l->entradas[i].rd, rd, 5);
+        strncpy(s->saidas[i].cod_binario, "000000", 6);
+        strncpy(s->saidas[i].cod_binario + 6, rs, 5);
+        strncpy(s->saidas[i].cod_binario + 11, rt, 5);
+        strncpy(s->saidas[i].cod_binario + 16, rd, 5);
+        strncpy(s->saidas[i].cod_binario + 21, "000000", 5);
+        strncpy(s->saidas[i].cod_binario + 26, "100000", 6);
+    }
+    else if (strcmp(l->entradas[i].instrucao_tipo, "sub") == 0)
+    {
+        char rs[6];
+        char rt[6];
+        char rd[6];
+        intToBinaryString(l->entradas[i].rs, rs, 5);
+        intToBinaryString(l->entradas[i].rt, rt, 5);
+        intToBinaryString(l->entradas[i].rd, rd, 5);
+        strncpy(s->saidas[i].cod_binario, "000000", 6);
+        strncpy(s->saidas[i].cod_binario + 6, rs, 5);
+        strncpy(s->saidas[i].cod_binario + 11, rt, 5);
+        strncpy(s->saidas[i].cod_binario + 16, rd, 5);
+        strncpy(s->saidas[i].cod_binario + 21, "000000", 5);
+        strncpy(s->saidas[i].cod_binario + 26, "100010", 6);
+    }
+}
+void preencher_tipo_I(lista_entradas *l, lista_saidas *s, int i)
+{
+    if (strcmp(l->entradas[i].instrucao_tipo, "addi") == 0)
+    {
+        char rs[6];
+        char rd[6];
+        char immediate[17];
+        intToBinaryString(l->entradas[i].rs, rs, 5);
+        intToBinaryString(l->entradas[i].rd, rd, 5);
+        intToBinaryString(l->entradas[i].const_or_address, immediate, 16);
+        strncpy(s->saidas[i].cod_binario, "001000", 6);
+        strncpy(s->saidas[i].cod_binario + 6, rs, 5);
+        strncpy(s->saidas[i].cod_binario + 11, rd, 5);
+        strncpy(s->saidas[i].cod_binario + 16, immediate, 16);
+    }
+
+    else if (strcmp(l->entradas[i].instrucao_tipo, "lw") == 0)
+    {
+        char rs[6];
+        char rt[6];
+        char immediate[17];
+        intToBinaryString(l->entradas[i].rs, rs, 5);
+        intToBinaryString(l->entradas[i].rt, rt, 5);
+        intToBinaryString(l->entradas[i].const_or_address, immediate, 16);
+        strncpy(s->saidas[i].cod_binario, "100011", 6);
+        strncpy(s->saidas[i].cod_binario + 6, rs, 5);
+        strncpy(s->saidas[i].cod_binario + 11, rt, 5);
+        strncpy(s->saidas[i].cod_binario + 16, immediate, 16);
+    }
+
+    else if (strcmp(l->entradas[i].instrucao_tipo, "sw") == 0)
+    {
+        char rs[6];
+        char rt[6];
+        char immediate[17];
+        intToBinaryString(l->entradas[i].rs, rs, 5);
+        intToBinaryString(l->entradas[i].rt, rt, 5);
+        intToBinaryString(l->entradas[i].const_or_address, immediate, 16);
+        strncpy(s->saidas[i].cod_binario, "101011", 6);
+        strncpy(s->saidas[i].cod_binario + 6, rs, 5);
+        strncpy(s->saidas[i].cod_binario + 11, rt, 5);
+        strncpy(s->saidas[i].cod_binario + 16, immediate, 16);
+    }
+
+    else if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)
+    {
+        char rs[6];
+        char rt[6];
+        char immediate[17];
+        intToBinaryString(l->entradas[i].rs, rs, 5);
+        intToBinaryString(l->entradas[i].rt, rt, 5);
+        intToBinaryString(l->entradas[i].const_or_address, immediate, 16);
+        strncpy(s->saidas[i].cod_binario, "000100", 6);
+        strncpy(s->saidas[i].cod_binario + 6, rs, 5);
+        strncpy(s->saidas[i].cod_binario + 11, rt, 5);
+        strncpy(s->saidas[i].cod_binario + 16, immediate, 16);
+    }
+
+    else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0)
+    {
+        char rs[6];
+        char rt[6];
+        char immediate[17];
+        intToBinaryString(l->entradas[i].rs, rs, 5);
+        intToBinaryString(l->entradas[i].rt, rt, 5);
+        intToBinaryString(l->entradas[i].const_or_address, immediate, 16);
+        strncpy(s->saidas[i].cod_binario, "000010", 6);
+        strncpy(s->saidas[i].cod_binario + 6, rs, 5);
+        strncpy(s->saidas[i].cod_binario + 11, rt, 5);
+        strncpy(s->saidas[i].cod_binario + 16, immediate, 16);
+    }
+}
+
+void intToBinaryString(int num, char *binaryString, int bits)
+{
+    for (int i = bits - 1; i >= 0; i--)
+    {
+        binaryString[bits - 1 - i] = (num & (1 << i)) ? '1' : '0';
+    }
+    binaryString[bits] = '\0';
+}
+
+void escreverSaidasEmArquivo(lista_saidas *lista, const char *nomeArquivo)
+{
+    FILE *arquivo = fopen(nomeArquivo, "w");
+
+    if (arquivo == NULL)
+    {
+        perror("Erro ao abrir o arquivo");
+        return;
+    }
+
+    for (int i = 0; i < lista->quantidade; i++)
+    {
+        fprintf(arquivo, "%s\n", lista->saidas[i].cod_binario);
+    }
+
+    fclose(arquivo);
+    printf("Os codigos binarios foram salvos em '%s'.\n", nomeArquivo);
 }

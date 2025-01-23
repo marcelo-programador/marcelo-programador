@@ -98,37 +98,6 @@ void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo)
     fclose(arquivo);
 }
 
-/*
-void controle_principal(lista_entradas *l, int *PC)
-{
-    inicializar_registradores();
-    if (l->quantidade == 0)
-    {
-        printf("Lista Vazia.\n");
-        exit(1);
-    }
-
-    printf("Iniciando Controle Principal ...\n");
-    bool process1, process2, process3, process4;
-    for (int i = 0; i < l->quantidade; i++)
-    {
-        process1 = definir_sinais(l);
-        if (process1 == true)
-            process2 = alteracao_registrador(l, i);
-        else {printf("Erro na definicao de sinais de controle da instrucao %d", i+1);}
-
-        if(process2 == true)
-            process3 = operacoes_registradores(l, i);
-        else{printf("Erro na operacao dos registradores da instrucao %d", i+1);}
-
-        if (process3 == true){
-        alteracao_pc(l, i, PC);
-        }
-    }
-    printf("Operacao Concluida!\n");
-}
-*/
-
 void controle_principal(lista_entradas *l, int *PC)
 {
     inicializar_registradores();
@@ -239,75 +208,6 @@ void printar_codigo_binario(lista_entradas *l, int i)
     printf("Codigo binario: %s\n", l->entradas[i].cod_assembly);
 }
 
-void organizar_instrucoes(const char *entrada, lista_entradas *l)
-{
-}
-/*
-void organizar_instrucoes(const char *nome_arquivo, lista_entradas *l)
-{
-    FILE *arquivo = fopen(nome_arquivo, "r");
-    if (arquivo == NULL)
-    {
-        perror("Erro ao abrir o arquivo");
-        return;
-    }
-
-    char binario[TAM_INSTRUCAO + 1]; // String para armazenar uma instrução binária (32 bits + terminador nulo)
-    int i = 0;
-    char c;
-    instructions nova_instrucao;
-
-    // Loop para ler o arquivo caractere por caractere
-    while ((c = fgetc(arquivo)) != EOF)
-    {
-        // Ignorar espaços e quebras de linha
-        if (c == ' ' || c == '\n')
-        {
-            continue;
-        }
-
-        // Adicionar o caractere binário à string binario
-        if (i < TAM_INSTRUCAO)
-        {
-            binario[i++] = c;
-        }
-
-        // Quando 32 caracteres são lidos, processar a instrução
-        if (i == TAM_INSTRUCAO)
-        {
-            binario[i] = '\0'; // Garantir que a string está terminada com '\0'
-
-            // Preencher a estrutura instructions com a instrução binária
-            strcpy(nova_instrucao.cod_assembly, binario);
-
-            // Opcional: Defina os outros campos de controle, por exemplo, com valores fictícios
-            // Exemplo de valor fictício
-            strcpy(nova_instrucao.ALUOp, "00");
-            nova_instrucao.RegDst = 'X';
-            nova_instrucao.ALUSrc = '1';
-            nova_instrucao.MemtoReg = '0';
-            nova_instrucao.RegWrite = '1';
-            nova_instrucao.MemRead = '0';
-            nova_instrucao.MemWrite = '0';
-            nova_instrucao.Branch = '0';
-
-            // Inserir a instrução na lista
-            inserir_entrada(l, nova_instrucao);
-
-            // Resetar o índice para a próxima instrução
-            i = 0;
-        }
-    }
-
-    // Fechar o arquivo
-    fclose(arquivo);
-
-    if (i != 0)
-    {
-        printf("Erro: arquivo não contém um numero multiplo de 32 bits.\n");
-    }
-}
-*/
 void definir_formato(lista_entradas *l)
 {
     for (int i = 0; i < l->quantidade; i++)
@@ -327,7 +227,7 @@ void definir_formato(lista_entradas *l)
     }
 }
 
-bool definir_sinai_bin(lista_entradas *l)
+bool definir_sinais_bin(lista_entradas *l)
 {
     definir_formato(l);
     for (int i = 0; i < l->quantidade; i++)
@@ -442,38 +342,7 @@ void formato_I(lista_entradas *l, int i)
         strcpy(l->entradas[i].instrucao_tipo, "desconhecido");
     }
 }
-/*
-void alteracao_pc(lista_entradas *l, int i, int *PC)
-{
-    if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0 ||
-        strcmp(l->entradas[i].instrucao_tipo, "sub") == 0 ||
-        strcmp(l->entradas[i].instrucao_tipo, "lw") == 0 ||
-        strcmp(l->entradas[i].instrucao_tipo, "sw") == 0 ||
-        strcmp(l->entradas[i].instrucao_tipo, "addi") == 0)
-    {
-        if (*PC <= MEMORIA - 4)
-        {
-            *PC = *PC + 4;
-        }
-        else
-        {
-            printf("*** ERRO!!: Acesso invalido a memoria (Endereco fora dos limites de memoria) ***\n");
-        }
-    }
-    else if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)
-    {
-        if(((l->entradas[i].rs == l->entradas[i].rt) && *PC <= MEMORIA-4)){
-            *PC = *PC + l->entradas[i].const_or_address;
-        }
-        else if ((l->entradas[i].rs != l->entradas[i].rt) && *PC <= MEMORIA-4){
-            *PC = * PC + 4;
-        }
-        else{
-            printf("*** ERRO!!: Acesso invalido a memoria (Endereco fora dos limites de memoria) ***\n");
-        }
-    }
-}
-*/
+
 void alteracao_pc(lista_entradas *l, int i, int *PC)
 {
     if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)
@@ -610,49 +479,6 @@ bool operacoes_registradores(lista_entradas *l, int i)
 
     return false;
 }
-/*
-void printar_mudancas_memoria(lista_entradas *l, int i)
-{
-    const char *registradores_nome[N_REGISTRADORES] = {
-        "$zero", "$at", "$v0", "$v1", "$a0", "$a1", "$a2", "$a3",
-        "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7",
-        "$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7",
-        "$t8", "$t9", "$k0", "$k1", "$gp", "$sp", "$fp", "$ra"};
-
-    if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0)
-    {
-        printf("Executando %s: %s = %s + %s\nResultado: %s = %d\n",
-               l->entradas[i].instrucao_tipo,
-               registradores_nome[l->entradas[i].rd],
-               registradores_nome[l->entradas[i].rs],
-               registradores_nome[l->entradas[i].rt],
-               registradores_nome[l->entradas[i].rd],
-               registradores[l->entradas[i].rd]);
-    }
-
-    else if (strcmp(l->entradas[i].instrucao_tipo, "sub") == 0)
-    {
-        printf("Executando %s: %s = %s - %s\nResultado: %s = %d\n",
-               l->entradas[i].instrucao_tipo,
-               registradores_nome[l->entradas[i].rd],
-               registradores_nome[l->entradas[i].rs],
-               registradores_nome[l->entradas[i].rt],
-               registradores_nome[l->entradas[i].rd],
-               registradores[l->entradas[i].rd]);
-    }
-
-    else if (strcmp(l->entradas[i].instrucao_tipo, "addi") == 0)
-    {
-        printf("Executando %s: %s = %s + %d\nResultado: %s = %d\n",
-               l->entradas[i].instrucao_tipo,
-               registradores_nome[l->entradas[i].rt],
-               registradores_nome[l->entradas[i].rs],
-               l->entradas[i].const_or_address,
-               registradores_nome[l->entradas[i].rt],
-               registradores[l->entradas[i].rt]);
-    }
-}
-*/
 
 void printar_mudancas_memoria(lista_entradas *l, int i)
 {
@@ -741,7 +567,6 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
 
 int contar_instrucoes(const char *nome_arquivo)
 
-
 {
     FILE *arquivo = fopen(nome_arquivo, "r");
     if (!arquivo)
@@ -780,14 +605,19 @@ int contar_instrucoes(const char *nome_arquivo)
     return contador_instrucoes;
 }
 
-void assembly_instruction_type_form(lista_entradas * l){
-    if(l != NULL){
-        for(int i = 0; i <l->quantidade; i++){
-            sscanf(l->entradas[i].cod_assembly,"%s", l->entradas[i].instrucao_tipo);
-            if(strcmp(l->entradas[i].instrucao_tipo, "add") == 0 || strcmp(l->entradas[i].instrucao_tipo, "sub") == 0){
+void assembly_instruction_type_form(lista_entradas *l)
+{
+    if (l != NULL)
+    {
+        for (int i = 0; i < l->quantidade; i++)
+        {
+            sscanf(l->entradas[i].cod_assembly, "%s", l->entradas[i].instrucao_tipo);
+            if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0 || strcmp(l->entradas[i].instrucao_tipo, "sub") == 0)
+            {
                 l->entradas[i].formato_tipo = 'R';
             }
-            else{
+            else
+            {
                 l->entradas[i].formato_tipo = 'I';
             }
         }

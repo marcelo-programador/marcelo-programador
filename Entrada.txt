@@ -1,8 +1,10 @@
-addi $t2 $zero 4; addi $t0 $zero 4; 
-addi $t3 $zero 6;
+addi $t2 $zero 4; 
+addi $t0 $zero 5; 
+addi $t3 $t0 6;
 add $t1 $t2 $t3;
 sw $t1 4($t6);
 beq $s0 $t4 8;
+j 10000;
 
 
 
