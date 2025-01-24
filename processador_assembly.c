@@ -102,7 +102,7 @@ void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo)
     fclose(arquivo);
 }
 
-void exibir_lista_assembly(lista_entradas *l, lista_saidas *s)
+void exibir_lista_assembly(lista_entradas *l, lista_saidas *s, int *PC)
 {
     if (l->quantidade == 0)
     {
@@ -113,12 +113,12 @@ void exibir_lista_assembly(lista_entradas *l, lista_saidas *s)
     printf("Exibindo as instrucoes armazenadas:\n");
     for (int i = 0; i < l->quantidade; i++)
     {
-        printf("Instrucao MIPS %d:\n", i + 1);
+        printf("Instrucao Assembly %d:\n", i + 1);
         printar_codigo_assembly(l, i);
         printar_codigo_bin(s, i);
         printar_tipo_instrucao(l, i);
         printar_mudancas_memoria(l, i);
-        printar_pc_assembly(l, i);
+        printar_pc_assembly(l, i, *PC);
         printar_sinais_assembly(l, i);
 
         printf("\n");
@@ -342,10 +342,10 @@ void alteracao_pc_assembly(lista_entradas *l, int *PC)
         if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0 && *PC <= MEMORIA - 4)
         {
 
-            if (l->entradas[i].rs == l->entradas[i].rt)
+            if (registradores[l->entradas[i].rs] == registradores[l->entradas[i].rt])
             {
 
-                int novo_pc = *PC + (l->entradas[i].const_or_address * 4);
+                int novo_pc = *PC + 4 + (l->entradas[i].const_or_address * 4);
 
                 *PC = novo_pc;
             }
@@ -367,7 +367,7 @@ void alteracao_pc_assembly(lista_entradas *l, int *PC)
 
         else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0 && *PC <= MEMORIA - 4)
         {
-            if (l->entradas[i].const_or_address * 4 <= MEMORIA - 4)
+            if (l->entradas[i].const_or_address * 4 + *PC + 4 <= MEMORIA)
             {
                 int novo_pc = *PC + (l->entradas[i].const_or_address * 4);
                 *PC = novo_pc;
@@ -376,7 +376,7 @@ void alteracao_pc_assembly(lista_entradas *l, int *PC)
     }
 }
 
-void printar_pc_assembly(lista_entradas *l, int i)
+void printar_pc_assembly(lista_entradas *l, int i, int PC)
 {
     if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0 ||
         strcmp(l->entradas[i].instrucao_tipo, "sub") == 0 ||
@@ -389,9 +389,9 @@ void printar_pc_assembly(lista_entradas *l, int i)
 
     else if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)
     {
-        if (l->entradas[i].rs == l->entradas[i].rt)
+        if (registradores[l->entradas[i].rs] == registradores[l->entradas[i].rt])
         {
-            printf("Registradores Iguais => PC = PC + %d\n", l->entradas[i].const_or_address * 4);
+            printf("Registradores Iguais => PC = PC + 4 + %d\n", l->entradas[i].const_or_address * 4);
         }
         else
         {
@@ -400,7 +400,14 @@ void printar_pc_assembly(lista_entradas *l, int i)
     }
     else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0)
     {
-        printf("PC = PC + %d\n", l->entradas[i].const_or_address * 4);
+        if (((l->entradas[i].const_or_address * 4) + PC) <= MEMORIA)
+        {
+            printf("PC = PC + %d\n", l->entradas[i].const_or_address * 4);
+        }
+        else
+        {
+            printf("ERRO!!!: Jump Supera o Limite de Memoria!!!\n");
+        }
     }
 }
 
@@ -444,13 +451,13 @@ void alteracao_registrador_assembly(lista_entradas *l)
         }
         else if (strcmp(l->entradas[i].instrucao_tipo, "addi") == 0)
         {
-            sscanf(l->entradas[i].cod_assembly, "%*s %s %s %d", rd_ass, rs_ass, &immediate);
+            sscanf(l->entradas[i].cod_assembly, "%*s %s %s %d", rt_ass, rs_ass, &immediate);
 
             for (int j = 0; j < N_REGISTRADORES; j++)
             {
-                if (strcmp(rd_ass, registradores_nome[j]) == 0)
+                if (strcmp(rt_ass, registradores_nome[j]) == 0)
                 {
-                    l->entradas[i].rd = j;
+                    l->entradas[i].rt = j;
                 }
 
                 if (strcmp(rs_ass, registradores_nome[j]) == 0)
@@ -512,19 +519,19 @@ void operacoes_registradores_assembly(lista_entradas *l)
         }
         else if (strcmp(l->entradas[i].instrucao_tipo, "addi") == 0)
         {
-            registradores[l->entradas[i].rd] = registradores[l->entradas[i].rs] + l->entradas[i].const_or_address;
+            registradores[l->entradas[i].rt] = registradores[l->entradas[i].rs] + l->entradas[i].const_or_address;
         }
     }
 }
 
 void printar_mudancas_memoria(lista_entradas *l, int i)
 {
-    const char *registradores_nome[N_REGISTRADORES] = {
+    const char *registradores_nome[33] = {
         "$zero", "$at", "$v0", "$v1", "$a0", "$a1", "$a2", "$a3",
         "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7",
         "$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7",
         "$t8", "$t9", "$k0", "$k1", "$gp", "$sp", "$fp", "$ra"};
-    int offset = (l->entradas[i].const_or_address / 4);
+    int offset = (l->entradas[i].const_or_address);
     int rd = l->entradas[i].rd;
     int rs = l->entradas[i].rs;
     int rt = l->entradas[i].rt;
@@ -555,11 +562,11 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
     {
         printf("Executando %s: %s = %s + %d\nResultado: %s = %d\n",
                l->entradas[i].instrucao_tipo,
-               registradores_nome[l->entradas[i].rd],
+               registradores_nome[l->entradas[i].rt],
                registradores_nome[l->entradas[i].rs],
                l->entradas[i].const_or_address,
-               registradores_nome[l->entradas[i].rd],
-               registradores[l->entradas[i].rd]);
+               registradores_nome[l->entradas[i].rt],
+               registradores[l->entradas[i].rt]);
     }
 
     else if (strcmp(l->entradas[i].instrucao_tipo, "lw") == 0)
@@ -567,7 +574,7 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
         printf("Executando %s: %s[%d] = %s\n",
                l->entradas[i].instrucao_tipo,
                registradores_nome[rs],
-               offset,
+               l->entradas[i].const_or_address / 4,
                registradores_nome[rt]);
         printf("Carregado o Valor da Memoria no Endereco  %s + %d Para o Registrador %s\n", registradores_nome[rt], l->entradas[i].const_or_address, registradores_nome[rs]);
     }
@@ -578,9 +585,9 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
         printf("Executando %s: %s[%d] = %s\n",
                l->entradas[i].instrucao_tipo,
                registradores_nome[rs],
-               offset,
+               (int)(l->entradas[i].const_or_address / 4),
                registradores_nome[rt]);
-        printf("Armazena o Valor do Registrador %s na Memoria no Endereco %s + %d\n", registradores_nome[rt], registradores_nome[rs]+ l->entradas[i].const_or_address);
+        printf("Armazena o Valor do Registrador %s na Memoria no Endereco %s + %d\n", registradores_nome[rt], registradores_nome[rs], l->entradas[i].const_or_address);
     }
 
     else if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)
@@ -830,7 +837,7 @@ void Controlador_Principal_Assembly()
     alteracao_pc_assembly(&lista, &PC);
     preencher_lista_out(&lista, &lista_output);
     escreverSaidasEmArquivo(&lista_output, saida_binario);
-    exibir_lista_assembly(&lista, &lista_output);
+    exibir_lista_assembly(&lista, &lista_output, &PC);
     printf("PC Atual: %d\n\n", PC);
     finalizar(&lista, &lista_output);
 }
