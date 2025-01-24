@@ -102,7 +102,7 @@ void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo)
     fclose(arquivo);
 }
 
-void exibir_lista_assembly(lista_entradas *l, lista_saidas* s)
+void exibir_lista_assembly(lista_entradas *l, lista_saidas *s)
 {
     if (l->quantidade == 0)
     {
@@ -115,7 +115,7 @@ void exibir_lista_assembly(lista_entradas *l, lista_saidas* s)
     {
         printf("Instrucao MIPS %d:\n", i + 1);
         printar_codigo_assembly(l, i);
-        printar_codigo_bin(s,i);
+        printar_codigo_bin(s, i);
         printar_tipo_instrucao(l, i);
         printar_mudancas_memoria(l, i);
         printar_pc_assembly(l, i);
@@ -564,13 +564,12 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
 
     else if (strcmp(l->entradas[i].instrucao_tipo, "lw") == 0)
     {
-        printf("Executando %s: %s = Mem[%s + %d]\nResultado: %s = %d\n",
+        printf("Executando %s: %s[%d] = %s\n",
                l->entradas[i].instrucao_tipo,
-               registradores_nome[l->entradas[i].rt],
-               registradores_nome[l->entradas[i].rs],
-               l->entradas[i].const_or_address,
-               registradores_nome[l->entradas[i].rt],
-               registradores[l->entradas[i].rt]);
+               registradores_nome[rs],
+               offset,
+               registradores_nome[rt]);
+        printf("Carregado o Valor da Memoria no Endereco  %s + %d Para o Registrador %s\n", registradores_nome[rt], l->entradas[i].const_or_address, registradores_nome[rs]);
     }
 
     else if (strcmp(l->entradas[i].instrucao_tipo, "sw") == 0)
@@ -581,6 +580,7 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
                registradores_nome[rs],
                offset,
                registradores_nome[rt]);
+        printf("Armazena o Valor do Registrador %s na Memoria no Endereco %s + %d\n", registradores_nome[rt], registradores_nome[rs]+ l->entradas[i].const_or_address);
     }
 
     else if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)
