@@ -13,7 +13,7 @@
 
 uint32_t registradores[N_REGISTRADORES];
 
-void inicializar_registradores()
+void inicializar_registradores_bin()
 {
     for (int i = 0; i < 32; i++)
     {
@@ -21,7 +21,7 @@ void inicializar_registradores()
     }
 }
 
-void inicializar(lista_entradas *l, int cap)
+void inicializar_bin(lista_entradas *l, int cap)
 {
     l->entradas = (instructions *)calloc(cap, sizeof(instructions));
     l->quantidade = 0;
@@ -29,13 +29,13 @@ void inicializar(lista_entradas *l, int cap)
     printf("lista inicializada\n");
 }
 
-void finalizar(lista_entradas *l)
+void finalizar_bin(lista_entradas *l)
 {
     free(l->entradas);
     printf("Lista Finalizada com Sucesso!\n");
 }
 
-void inserir_entrada(lista_entradas *l, instructions i)
+void inserir_entrada_bin(lista_entradas *l, instructions i)
 {
     if (l->quantidade < MAX_INSTRUCOES)
     {
@@ -48,7 +48,7 @@ void inserir_entrada(lista_entradas *l, instructions i)
     }
 }
 
-void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo)
+void ler_arquivo_salvar_na_lista_bin(lista_entradas *l, const char *nome_arquivo)
 {
     FILE *arquivo = fopen(nome_arquivo, "r");
     if (!arquivo)
@@ -87,7 +87,7 @@ void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo)
                 strncpy(nova_instrucao.cod_assembly, instrucao, sizeof(nova_instrucao.cod_assembly) - 1);
 
                 // Inserir a instrução na lista
-                inserir_entrada(l, nova_instrucao);
+                inserir_entrada_bin(l, nova_instrucao);
             }
 
             // Avançar para a próxima instrução
@@ -98,12 +98,16 @@ void ler_arquivo_salvar_na_lista(lista_entradas *l, const char *nome_arquivo)
     fclose(arquivo);
 }
 
-void controle_principal(lista_entradas *l, int *PC)
+void Controlador_Principal_Binario()
 {
-    inicializar_registradores();
-
+    inicializar_registradores_bin();
+    const char *saida_binario = "Saida.txt";
+    int PC = 0;
+    lista_entradas l;
+    inicializar_bin(&l, contar_instrucoes_bin(saida_binario));
+    ler_arquivo_salvar_na_lista_bin(&l,saida_binario);
     // Verificar se a lista está vazia
-    if (l->quantidade == 0)
+    if (l.quantidade == 0)
     {
         printf("Lista Vazia.\n");
         exit(1);
@@ -114,14 +118,14 @@ void controle_principal(lista_entradas *l, int *PC)
     bool process1 = false, process2 = false, process3 = false;
 
     // Iterar sobre as entradas da lista
-    for (int i = 0; i < l->quantidade; i++)
+    for (int i = 0; i < l.quantidade; i++)
     {
         // Definir os sinais de controle
-        process1 = definir_sinais(l);
+        process1 = definir_sinais_bin(&l);
         if (process1)
         {
             // Se os sinais de controle foram definidos com sucesso, alterar o registrador
-            process2 = alteracao_registrador(l, i);
+            process2 = alteracao_registrador_bin(&l, i);
         }
         else
         {
@@ -132,7 +136,7 @@ void controle_principal(lista_entradas *l, int *PC)
         // Se a alteração de registrador foi bem-sucedida, realizar operações de registrador
         if (process2)
         {
-            process3 = operacoes_registradores(l, i);
+            process3 = operacoes_registradores_bin(&l, i);
         }
         else
         {
@@ -143,7 +147,7 @@ void controle_principal(lista_entradas *l, int *PC)
         // Se as operações de registrador foram realizadas, alterar o PC
         if (process3)
         {
-            alteracao_pc(l, i, PC);
+            alteracao_pc_bin(&l, i, &PC);
         }
         else
         {
@@ -151,11 +155,13 @@ void controle_principal(lista_entradas *l, int *PC)
             continue; // Pula para a próxima instrução
         }
     }
+    exibir_lista_bin(&l);
+    finalizar_bin(&l);
 
     printf("Operacao Concluida!\n");
 }
 
-void exibir_lista(lista_entradas *l)
+void exibir_lista_bin(lista_entradas *l)
 {
     if (l->quantidade == 0)
     {
@@ -168,10 +174,10 @@ void exibir_lista(lista_entradas *l)
     {
         printf("Instrucao MIPS %d:\n", i + 1);
         printar_codigo_binario(l, i);
-        printar_tipo_instrucao(l, i);
-        // printar_mudancas_memoria(l, i);
-        // printar_pc(l, i);
-        // printar_sinais(l, i);
+        printar_tipo_instrucao_bin(l, i);
+        printar_mudancas_memoria_bin(l, i);
+        printar_pc_bin(l, i);
+        printar_sinais(l, i);
 
         printf("\n");
     }
@@ -198,7 +204,7 @@ void printar_sinais(lista_entradas *l, int i)
     }
 }
 
-void printar_tipo_instrucao(lista_entradas *l, int i)
+void printar_tipo_instrucao_bin(lista_entradas *l, int i)
 {
     printf("Tipo de instrucao: %s\n", l->entradas[i].instrucao_tipo);
 }
@@ -267,7 +273,7 @@ void formato_R(lista_entradas *l, int i)
     }
 }
 
-void formato_I(lista_entradas *l, int i)
+void formato_I_bin(lista_entradas *l, int i)
 {
     // lw
     if (strncmp(l->entradas[i].cod_assembly, "100011", 6) == 0)
@@ -343,7 +349,7 @@ void formato_I(lista_entradas *l, int i)
     }
 }
 
-void alteracao_pc(lista_entradas *l, int i, int *PC)
+void alteracao_pc_bin(lista_entradas *l, int i, int *PC)
 {
     if (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)
     {
@@ -400,7 +406,7 @@ void alteracao_pc(lista_entradas *l, int i, int *PC)
     }
 }
 
-void printar_pc(lista_entradas *l, int i)
+void printar_pc_bin(lista_entradas *l, int i)
 {
     if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0 ||
         strcmp(l->entradas[i].instrucao_tipo, "sub") == 0 ||
@@ -428,7 +434,7 @@ void printar_pc(lista_entradas *l, int i)
     }
 }
 
-bool alteracao_registrador(lista_entradas *l, int i)
+bool alteracao_registrador_bin(lista_entradas *l, int i)
 {
     char rs_bin[6];
     char rt_bin[6];
@@ -459,7 +465,7 @@ bool alteracao_registrador(lista_entradas *l, int i)
     return false;
 }
 
-bool operacoes_registradores(lista_entradas *l, int i)
+bool operacoes_registradores_bin(lista_entradas *l, int i)
 {
     if (strcmp(l->entradas[i].instrucao_tipo, "add") == 0)
     {
@@ -480,7 +486,7 @@ bool operacoes_registradores(lista_entradas *l, int i)
     return false;
 }
 
-void printar_mudancas_memoria(lista_entradas *l, int i)
+void printar_mudancas_memoria_bin(lista_entradas *l, int i)
 {
     const char *registradores_nome[N_REGISTRADORES] = {
         "$zero", "$at", "$v0", "$v1", "$a0", "$a1", "$a2", "$a3",
@@ -565,7 +571,7 @@ void printar_mudancas_memoria(lista_entradas *l, int i)
     }
 }
 
-int contar_instrucoes(const char *nome_arquivo)
+int contar_instrucoes_bin(const char *nome_arquivo)
 
 {
     FILE *arquivo = fopen(nome_arquivo, "r");
@@ -605,7 +611,7 @@ int contar_instrucoes(const char *nome_arquivo)
     return contador_instrucoes;
 }
 
-void assembly_instruction_type_form(lista_entradas *l)
+void assembly_instruction_type_form_bin(lista_entradas *l)
 {
     if (l != NULL)
     {
