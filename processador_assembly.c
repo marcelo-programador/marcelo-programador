@@ -483,7 +483,7 @@ void printar_mudancas_memoria(lista_entradas *l, int i) {
     printf("Executando %s: %s[%d] = %s\n", l->entradas[i].instrucao_tipo,
            registradores_nome[rs], l->entradas[i].const_or_address / 4,
            registradores_nome[rt]);
-    printf("Carregado o Valor da Memoria no Endereco  %s + %d Para o "
+    printf("Carregado o Valor da Memoria no Endereco %s + %d Para o "
            "Registrador %s\n",
            registradores_nome[rt], l->entradas[i].const_or_address,
            registradores_nome[rs]);
