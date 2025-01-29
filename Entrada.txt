@@ -5,7 +5,8 @@ sw $t1 4($t4);
 addi $t0 $zero 10;
 beq $t0 $t1 100;
 beq $t2 $t3 75;
-lw $t3 4($t3);
+lw $t9 4($t3);
+k 50;
 j 50;
 
 

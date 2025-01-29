@@ -119,7 +119,7 @@ void printar_sinais_assembly(lista_entradas *l, int i) {
            l->entradas[i].MemRead, l->entradas[i].MemWrite,
            l->entradas[i].Branch);
   } else {
-    printf("Erro!!!: Tipo de instrucao desconhecido");
+    printf("ERRO!!!: Tipo de instrucao desconhecido\n");
   }
 }
 
@@ -509,8 +509,8 @@ void printar_mudancas_memoria(lista_entradas *l, int i) {
   else if (strcmp(l->entradas[i].instrucao_tipo, "j") == 0) {
     printf("Executando %s: j %d\n", l->entradas[i].instrucao_tipo,
            l->entradas[i].const_or_address);
-  } else {
-    printf("ERRO!!! : A instrucao utiliza um registrador invalido\n");
+  } else if (!(strcmp(l->entradas[i].instrucao_tipo, "j") == 0) || (strcmp(l->entradas[i].instrucao_tipo, "add") == 0) || (strcmp(l->entradas[i].instrucao_tipo, "sub") == 0)|| (strcmp(l->entradas[i].instrucao_tipo, "addi") == 0) || (strcmp(l->entradas[i].instrucao_tipo, "beq") == 0)|| (strcmp(l->entradas[i].instrucao_tipo, "lw") == 0) || (strcmp(l->entradas[i].instrucao_tipo, "sw") == 0)){
+    printf("ERRO!!! : A instrucao utiliza um registrador invalido ou A instrucao nao esta presente no sistema\n");
   }
 }
 
